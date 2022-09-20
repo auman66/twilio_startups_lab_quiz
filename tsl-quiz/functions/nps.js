@@ -9,19 +9,41 @@ const base = new airtable({
   }).base(AIRTABLE_BASE_ID);
 
 exports.handler = async function(context, event, callback) {
-  base('results').update([{
-        "id": event.at_id,
-        "fields": {
-          NPS: parseInt(event.NPS)
-        }}], (err, records) => {
-        if (err) {
-          console.error(err);
-          return [];
-        }
-        console.log("first ID:", records[0].getId());
+    if (event.at_id == ""){
+        base('results').create([{
+            "fields": {
+                events: [event.eid],
+                language: [event.lang],
+                NPS: parseInt(event.NPS)
+            }
+        }], (err, records) => {
+            if (err) {
+            console.error(err);
+            return [];
+            }
+            console.log("first ID:", records[0].getId());
 
-        return callback(null, {
-            result: 'success'
+            return callback(null, {
+                'at_id': records[0].getId()
+            });
         });
-    });
+    } else {
+        base('results').update([{
+            "id": event.at_id,
+            "fields": {
+            NPS: parseInt(event.NPS)
+            }}], (err, records) => {
+            if (err) {
+            console.error(err);
+            return [];
+            }
+            console.log("first ID:", records[0].getId());
+
+            return callback(null, {
+                at_id: event.at_id
+            });
+        });
+    }
+
+    
 };

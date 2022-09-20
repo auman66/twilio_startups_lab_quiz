@@ -23,9 +23,6 @@ exports.handler = async function(context, event, callback) {
       'event': eId,
       'signup_link': link
   };
-  jsonResponse = {
-      'languages': lang_dict
-  };
 
   // Iterate through the languages
   for (const [i, lang] of langs.entries()) {
@@ -42,6 +39,7 @@ exports.handler = async function(context, event, callback) {
       // Create the welcome & choose language message
       if (langs.length == 1){
           lang_dict['welcome'] = messages.no_choice_welcome;
+          lang_dict['language'] = messages.language;
       } else if (i == 0) {
           lang_dict['welcome'] = messages.welcome;
           lang_dict['choice_keys'] = messages.choose_language.replace("###",(i+1));
@@ -55,17 +53,13 @@ exports.handler = async function(context, event, callback) {
   };
 
   // Fill in numbers to bad_response
-  opts = Array.from(Array(langs.length).keys())
-  opts.shift()
-  lang_dict['bad_response'] = lang_dict['bad_response'].replace(/XXX/g,opts.join(", "))
-  lang_dict['bad_response'] = lang_dict['bad_response'].replace(/YYY/g,langs.length)
+  if (langs.length > 1){
+    opts = Array.from(Array(langs.length).keys())
+    opts.shift()
+    lang_dict['bad_response'] = lang_dict['bad_response'].replace(/XXX/g,opts.join(", "))
+    lang_dict['bad_response'] = lang_dict['bad_response'].replace(/YYY/g,langs.length)
+  }
   
-  // Get graphics for Archtypes
-  await base('survey').select({
-      filterByFormula: "{name}='graphics'"
-  }).all().then( r => {
-      jsonResponse['graphics'] = r[0].fields;
-  });
 
   console.log("Returned on ", new Date().toLocaleString('en-US', { timeZone: 'America/Denver' }));
 
