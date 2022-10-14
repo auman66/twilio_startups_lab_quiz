@@ -1,0 +1,213 @@
+{
+    "description": "A New Flow",
+    "states": [
+      {
+        "name": "Trigger",
+        "type": "trigger",
+        "transitions": [
+          {
+            "next": "choose_language",
+            "event": "incomingMessage"
+          },
+          {
+            "event": "incomingCall"
+          },
+          {
+            "event": "incomingConversationMessage"
+          },
+          {
+            "next": "choose_language",
+            "event": "incomingRequest"
+          },
+          {
+            "event": "incomingParent"
+          }
+        ],
+        "properties": {
+          "offset": {
+            "x": 0,
+            "y": 0
+          }
+        }
+      },
+      {
+        "name": "switchboard",
+        "type": "split-based-on",
+        "transitions": [
+          {
+            "next": "tsl",
+            "event": "noMatch"
+          },
+          {
+            "next": "nps_p",
+            "event": "match",
+            "conditions": [
+              {
+                "friendly_name": "nps",
+                "arguments": [
+                  "{{trigger.message.Body}}"
+                ],
+                "type": "matches_any_of",
+                "value": "nps, NPS, feedback, apply, cta, link"
+              }
+            ]
+          },
+          {
+            "next": "tsl",
+            "event": "match",
+            "conditions": [
+              {
+                "friendly_name": "TSL",
+                "arguments": [
+                  "{{trigger.message.Body}}"
+                ],
+                "type": "matches_any_of",
+                "value": "tsl, TSL, quiz, archetype"
+              }
+            ]
+          }
+        ],
+        "properties": {
+          "input": "{{trigger.message.Body}}",
+          "offset": {
+            "x": 110,
+            "y": 510
+          }
+        }
+      },
+      {
+        "name": "choose_language",
+        "type": "run-subflow",
+        "transitions": [
+          {
+            "next": "switchboard",
+            "event": "completed"
+          },
+          {
+            "event": "failed"
+          }
+        ],
+        "properties": {
+          "flow_sid": "FW2583d93bd1f7820f32818aa4eee4e14c",
+          "flow_revision": "LatestPublished",
+          "offset": {
+            "x": 80,
+            "y": 270
+          }
+        }
+      },
+      {
+        "name": "tsl",
+        "type": "run-subflow",
+        "transitions": [
+          {
+            "next": "delay_1min",
+            "event": "completed"
+          },
+          {
+            "event": "failed"
+          }
+        ],
+        "properties": {
+          "flow_sid": "FW947510064416ffa01a0cb08306858057",
+          "flow_revision": "LatestPublished",
+          "offset": {
+            "x": 400,
+            "y": 840
+          },
+          "parameters": [
+            {
+              "value": "{{widgets.choose_language.eid}}",
+              "key": "eid"
+            },
+            {
+              "value": "{{widgets.choose_language.language}}",
+              "key": "language"
+            },
+            {
+              "value": "{{widgets.choose_language.lang_id}}",
+              "key": "lang_id"
+            }
+          ]
+        }
+      },
+      {
+        "name": "nps_p",
+        "type": "run-subflow",
+        "transitions": [
+          {
+            "event": "completed"
+          },
+          {
+            "event": "failed"
+          }
+        ],
+        "properties": {
+          "flow_sid": "FWff6ae7ce0610c1749b4e07702d2e1d53",
+          "flow_revision": "LatestPublished",
+          "offset": {
+            "x": -30,
+            "y": 1190
+          },
+          "parameters": [
+            {
+              "value": "{{widgets.choose_language.eid}}",
+              "key": "eid"
+            },
+            {
+              "value": "{{widgets.choose_language.language}}",
+              "key": "language"
+            },
+            {
+              "value": "{{widgets.choose_language.lang_id}}",
+              "key": "lang_id"
+            },
+            {
+              "value": "{{widgets.tsl.at_id}}",
+              "key": "at_id"
+            },
+            {
+              "value": "{{widgets.tsl.quiz}}",
+              "key": "quiz"
+            },
+            {
+              "value": "{{widgets.choose_language.link}}",
+              "key": "link"
+            }
+          ]
+        }
+      },
+      {
+        "name": "delay_1min",
+        "type": "run-subflow",
+        "transitions": [
+          {
+            "next": "nps_p",
+            "event": "completed"
+          },
+          {
+            "next": "nps_p",
+            "event": "failed"
+          }
+        ],
+        "properties": {
+          "flow_sid": "FW5b3d6ea8b047a0ea523dc45f5810ecfa",
+          "flow_revision": "LatestPublished",
+          "offset": {
+            "x": 430,
+            "y": 1170
+          },
+          "parameters": [
+            {
+              "value": "1",
+              "key": "delay"
+            }
+          ]
+        }
+      }
+    ],
+    "initial_state": "Trigger",
+    "flags": {
+      "allow_concurrent_calls": true
+    }
+  }

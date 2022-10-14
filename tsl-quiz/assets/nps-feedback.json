@@ -1,0 +1,322 @@
+{
+    "description": "nps-feedback",
+    "states": [
+      {
+        "name": "Trigger",
+        "type": "trigger",
+        "transitions": [
+          {
+            "event": "incomingMessage"
+          },
+          {
+            "event": "incomingCall"
+          },
+          {
+            "event": "incomingConversationMessage"
+          },
+          {
+            "event": "incomingRequest"
+          },
+          {
+            "next": "get_questions",
+            "event": "incomingParent"
+          }
+        ],
+        "properties": {
+          "offset": {
+            "x": 0,
+            "y": -310
+          }
+        }
+      },
+      {
+        "name": "send_nps",
+        "type": "send-and-wait-for-reply",
+        "transitions": [
+          {
+            "next": "split_1",
+            "event": "incomingMessage"
+          },
+          {
+            "event": "timeout"
+          },
+          {
+            "event": "deliveryFailure"
+          }
+        ],
+        "properties": {
+          "offset": {
+            "x": 370,
+            "y": 620
+          },
+          "service": "{{trigger.message.InstanceSid}}",
+          "channel": "{{trigger.message.ChannelSid}}",
+          "from": "{{flow.channel.address}}",
+          "body": "{% if flow.variables.resend_nps == 'true' %}{{widgets.get_questions.parsed.messages.bad_nps}} {% endif %}\n{{widgets.get_questions.parsed.messages.nps}}",
+          "timeout": "300"
+        }
+      },
+      {
+        "name": "split_1",
+        "type": "split-based-on",
+        "transitions": [
+          {
+            "next": "set_resend_nps",
+            "event": "noMatch"
+          },
+          {
+            "next": "save_nps",
+            "event": "match",
+            "conditions": [
+              {
+                "friendly_name": "int 0-10",
+                "arguments": [
+                  "{{widgets.send_nps.inbound.Body}}"
+                ],
+                "type": "matches_any_of",
+                "value": "0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10"
+              }
+            ]
+          }
+        ],
+        "properties": {
+          "input": "{{widgets.send_nps.inbound.Body}}",
+          "offset": {
+            "x": 420,
+            "y": 900
+          }
+        }
+      },
+      {
+        "name": "set_resend_nps",
+        "type": "set-variables",
+        "transitions": [
+          {
+            "next": "send_nps",
+            "event": "next"
+          }
+        ],
+        "properties": {
+          "variables": [
+            {
+              "value": "true",
+              "key": "resend_nps"
+            }
+          ],
+          "offset": {
+            "x": 860,
+            "y": 580
+          }
+        }
+      },
+      {
+        "name": "save_nps",
+        "type": "run-function",
+        "transitions": [
+          {
+            "next": "start_feedback",
+            "event": "success"
+          },
+          {
+            "next": "set_resend_nps",
+            "event": "fail"
+          }
+        ],
+        "properties": {
+          "service_sid": "ZS0e7380da73c4ca2f52a3eaf712bc5e3e",
+          "environment_sid": "ZEe04046d61c7566207334652b7fe2900d",
+          "offset": {
+            "x": 550,
+            "y": 1190
+          },
+          "function_sid": "ZH316a9870b1b146453ddd8bc53b3519bf",
+          "parameters": [
+            {
+              "value": "{{widgets.send_nps.inbound.Body}}",
+              "key": "NPS"
+            },
+            {
+              "value": "{{trigger.parent.parameters.at_id}}",
+              "key": "at_id"
+            },
+            {
+              "value": "{{trigger.parent.parameters.lang_id}}",
+              "key": "lang"
+            },
+            {
+              "value": "{{trigger.parent.parameters.eid}}",
+              "key": "eid"
+            }
+          ],
+          "url": "https://tsl-quiz-6173-dev.twil.io/nps"
+        }
+      },
+      {
+        "name": "send_feedback",
+        "type": "send-and-wait-for-reply",
+        "transitions": [
+          {
+            "next": "repeat_feedback",
+            "event": "incomingMessage"
+          },
+          {
+            "event": "timeout"
+          },
+          {
+            "event": "deliveryFailure"
+          }
+        ],
+        "properties": {
+          "offset": {
+            "x": 580,
+            "y": 1710
+          },
+          "service": "{{trigger.message.InstanceSid}}",
+          "channel": "{{trigger.message.ChannelSid}}",
+          "from": "{{flow.channel.address}}",
+          "body": "{% if flow.variables.first_feedback == \"true\" %}\n{{widgets.get_questions.parsed.messages.nps_thanks}}\n{% else %}\n{{widgets.get_questions.parsed.messages.feedback_followup}}\n{% endif %}",
+          "media_url": "",
+          "timeout": "120"
+        }
+      },
+      {
+        "name": "save_feedback",
+        "type": "run-function",
+        "transitions": [
+          {
+            "next": "send_feedback",
+            "event": "success"
+          },
+          {
+            "event": "fail"
+          }
+        ],
+        "properties": {
+          "service_sid": "ZS0e7380da73c4ca2f52a3eaf712bc5e3e",
+          "environment_sid": "ZEe04046d61c7566207334652b7fe2900d",
+          "offset": {
+            "x": 990,
+            "y": 1840
+          },
+          "function_sid": "ZH8757de02d3639d8fe79e68ff1d2e0ff1",
+          "parameters": [
+            {
+              "value": "{{widgets.save_nps.parsed.at_id}}",
+              "key": "at_id"
+            },
+            {
+              "value": "{{widgets.send_feedback.inbound.Body}}",
+              "key": "feedback"
+            }
+          ],
+          "url": "https://tsl-quiz-6173-dev.twil.io/feedback"
+        }
+      },
+      {
+        "name": "start_feedback",
+        "type": "set-variables",
+        "transitions": [
+          {
+            "next": "send_feedback",
+            "event": "next"
+          }
+        ],
+        "properties": {
+          "variables": [
+            {
+              "value": "true",
+              "key": "first_feedback"
+            }
+          ],
+          "offset": {
+            "x": 560,
+            "y": 1460
+          }
+        }
+      },
+      {
+        "name": "repeat_feedback",
+        "type": "set-variables",
+        "transitions": [
+          {
+            "next": "save_feedback",
+            "event": "next"
+          }
+        ],
+        "properties": {
+          "variables": [
+            {
+              "value": "false",
+              "key": "first_feedback"
+            }
+          ],
+          "offset": {
+            "x": 570,
+            "y": 1980
+          }
+        }
+      },
+      {
+        "name": "get_questions",
+        "type": "run-function",
+        "transitions": [
+          {
+            "next": "send_link",
+            "event": "success"
+          },
+          {
+            "event": "fail"
+          }
+        ],
+        "properties": {
+          "service_sid": "ZS0e7380da73c4ca2f52a3eaf712bc5e3e",
+          "environment_sid": "ZEe04046d61c7566207334652b7fe2900d",
+          "offset": {
+            "x": 380,
+            "y": 120
+          },
+          "function_sid": "ZH655c9d42cf2aa4b7939b94b958184cac",
+          "parameters": [
+            {
+              "value": "{{trigger.parent.parameters.lang_id}}",
+              "key": "lang_id"
+            }
+          ],
+          "url": "https://tsl-quiz-6173-dev.twil.io/questions"
+        }
+      },
+      {
+        "name": "send_link",
+        "type": "send-and-wait-for-reply",
+        "transitions": [
+          {
+            "next": "send_nps",
+            "event": "incomingMessage"
+          },
+          {
+            "next": "send_nps",
+            "event": "timeout"
+          },
+          {
+            "next": "send_nps",
+            "event": "deliveryFailure"
+          }
+        ],
+        "properties": {
+          "offset": {
+            "x": 390,
+            "y": 350
+          },
+          "service": "{{trigger.message.InstanceSid}}",
+          "channel": "{{trigger.message.ChannelSid}}",
+          "from": "{{flow.channel.address}}",
+          "body": "{{widgets.get_questions.parsed.messages.end}} {{trigger.parent.parameters.link}}\n{{widgets.get_questions.parsed.messages.end_build}}",
+          "timeout": "5"
+        }
+      }
+    ],
+    "initial_state": "Trigger",
+    "flags": {
+      "allow_concurrent_calls": true
+    }
+  }

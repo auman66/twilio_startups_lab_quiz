@@ -1,0 +1,141 @@
+{
+    "description": "min_delay_loop",
+    "states": [
+      {
+        "name": "Trigger",
+        "type": "trigger",
+        "transitions": [
+          {
+            "event": "incomingMessage"
+          },
+          {
+            "event": "incomingCall"
+          },
+          {
+            "event": "incomingConversationMessage"
+          },
+          {
+            "event": "incomingRequest"
+          },
+          {
+            "next": "Set_count",
+            "event": "incomingParent"
+          }
+        ],
+        "properties": {
+          "offset": {
+            "x": 0,
+            "y": 0
+          }
+        }
+      },
+      {
+        "name": "Set_count",
+        "type": "set-variables",
+        "transitions": [
+          {
+            "next": "check_count",
+            "event": "next"
+          }
+        ],
+        "properties": {
+          "variables": [
+            {
+              "value": "{{trigger.parent.parameters.delay | times: 1}}",
+              "key": "count"
+            }
+          ],
+          "offset": {
+            "x": 360,
+            "y": 340
+          }
+        }
+      },
+      {
+        "name": "check_count",
+        "type": "split-based-on",
+        "transitions": [
+          {
+            "event": "noMatch"
+          },
+          {
+            "next": "run_10s_delay",
+            "event": "match",
+            "conditions": [
+              {
+                "friendly_name": "If value greater_than 0",
+                "arguments": [
+                  "{{flow.variables.count}}"
+                ],
+                "type": "greater_than",
+                "value": "0"
+              }
+            ]
+          }
+        ],
+        "properties": {
+          "input": "{{flow.variables.count}}",
+          "offset": {
+            "x": 360,
+            "y": 620
+          }
+        }
+      },
+      {
+        "name": "run_10s_delay",
+        "type": "run-function",
+        "transitions": [
+          {
+            "next": "decrease_count",
+            "event": "success"
+          },
+          {
+            "next": "decrease_count",
+            "event": "fail"
+          }
+        ],
+        "properties": {
+          "service_sid": "ZS95b90654d205bcc50e33619e1e9cafbe",
+          "environment_sid": "ZEa5c149e15dae2f3d8bbd48d53663e0e2",
+          "offset": {
+            "x": 530,
+            "y": 910
+          },
+          "function_sid": "ZH3c1b293c5bb0f1d9c176374a73a36e3b",
+          "parameters": [
+            {
+              "value": "9999",
+              "key": "delay"
+            }
+          ],
+          "url": "https://utility-8369.twil.io/delay"
+        }
+      },
+      {
+        "name": "decrease_count",
+        "type": "set-variables",
+        "transitions": [
+          {
+            "next": "check_count",
+            "event": "next"
+          }
+        ],
+        "properties": {
+          "variables": [
+            {
+              "value": "{{flow.variables.count | minus: 1}}",
+              "key": "count"
+            }
+          ],
+          "offset": {
+            "x": 530,
+            "y": 1150
+          }
+        }
+      }
+    ],
+    "initial_state": "Trigger",
+    "flags": {
+      "allow_concurrent_calls": true
+    }
+  }

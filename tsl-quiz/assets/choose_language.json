@@ -1,0 +1,270 @@
+{
+    "description": "choose_language",
+    "states": [
+      {
+        "name": "Trigger",
+        "type": "trigger",
+        "transitions": [
+          {
+            "event": "incomingMessage"
+          },
+          {
+            "event": "incomingCall"
+          },
+          {
+            "event": "incomingConversationMessage"
+          },
+          {
+            "event": "incomingRequest"
+          },
+          {
+            "next": "event",
+            "event": "incomingParent"
+          }
+        ],
+        "properties": {
+          "offset": {
+            "x": 0,
+            "y": -310
+          }
+        }
+      },
+      {
+        "name": "prompt_language",
+        "type": "send-and-wait-for-reply",
+        "transitions": [
+          {
+            "next": "set_language",
+            "event": "incomingMessage"
+          },
+          {
+            "event": "timeout"
+          },
+          {
+            "event": "deliveryFailure"
+          }
+        ],
+        "properties": {
+          "offset": {
+            "x": -550,
+            "y": 560
+          },
+          "service": "{{trigger.message.InstanceSid}}",
+          "channel": "{{trigger.message.ChannelSid}}",
+          "from": "{{flow.channel.address}}",
+          "body": "{{widgets.event.parsed.choice_keys}}",
+          "timeout": "60"
+        }
+      },
+      {
+        "name": "check_language",
+        "type": "split-based-on",
+        "transitions": [
+          {
+            "next": "err_language",
+            "event": "noMatch"
+          },
+          {
+            "next": "pass_variables",
+            "event": "match",
+            "conditions": [
+              {
+                "friendly_name": "language is correct",
+                "arguments": [
+                  "{{flow.variables.language}}"
+                ],
+                "type": "is_not_blank",
+                "value": "Is Not Blank"
+              }
+            ]
+          }
+        ],
+        "properties": {
+          "input": "{{flow.variables.language}}",
+          "offset": {
+            "x": -520,
+            "y": 1040
+          }
+        }
+      },
+      {
+        "name": "err_language",
+        "type": "send-message",
+        "transitions": [
+          {
+            "next": "prompt_language",
+            "event": "sent"
+          },
+          {
+            "event": "failed"
+          }
+        ],
+        "properties": {
+          "offset": {
+            "x": -930,
+            "y": 590
+          },
+          "service": "{{trigger.message.InstanceSid}}",
+          "channel": "{{trigger.message.ChannelSid}}",
+          "from": "{{flow.channel.address}}",
+          "to": "{{contact.channel.address}}",
+          "body": "{{widgets.event.parsed.bad_response}}"
+        }
+      },
+      {
+        "name": "set_language",
+        "type": "set-variables",
+        "transitions": [
+          {
+            "next": "check_language",
+            "event": "next"
+          }
+        ],
+        "properties": {
+          "variables": [
+            {
+              "value": "{{widgets.event.parsed[widgets.prompt_language.inbound.Body]}}",
+              "key": "language"
+            }
+          ],
+          "offset": {
+            "x": -550,
+            "y": 770
+          }
+        }
+      },
+      {
+        "name": "event",
+        "type": "run-function",
+        "transitions": [
+          {
+            "next": "welcome",
+            "event": "success"
+          },
+          {
+            "event": "fail"
+          }
+        ],
+        "properties": {
+          "service_sid": "ZS0e7380da73c4ca2f52a3eaf712bc5e3e",
+          "environment_sid": "ZEe04046d61c7566207334652b7fe2900d",
+          "offset": {
+            "x": -410,
+            "y": -130
+          },
+          "function_sid": "ZHb26f5b63911abab8f1ffcfd939f93729",
+          "url": "https://tsl-quiz-6173-dev.twil.io/event"
+        }
+      },
+      {
+        "name": "welcome",
+        "type": "send-message",
+        "transitions": [
+          {
+            "next": "check_lang_count",
+            "event": "sent"
+          },
+          {
+            "event": "failed"
+          }
+        ],
+        "properties": {
+          "offset": {
+            "x": -410,
+            "y": 100
+          },
+          "service": "{{trigger.message.InstanceSid}}",
+          "channel": "{{trigger.message.ChannelSid}}",
+          "from": "{{flow.channel.address}}",
+          "to": "{{contact.channel.address}}",
+          "body": "{{widgets.event.parsed.welcome}}"
+        }
+      },
+      {
+        "name": "check_lang_count",
+        "type": "split-based-on",
+        "transitions": [
+          {
+            "next": "prompt_language",
+            "event": "noMatch"
+          },
+          {
+            "next": "set_1_language",
+            "event": "match",
+            "conditions": [
+              {
+                "friendly_name": "1 language",
+                "arguments": [
+                  "{{widgets.event.parsed.count}}"
+                ],
+                "type": "equal_to",
+                "value": "1"
+              }
+            ]
+          }
+        ],
+        "properties": {
+          "input": "{{widgets.event.parsed.count}}",
+          "offset": {
+            "x": -400,
+            "y": 320
+          }
+        }
+      },
+      {
+        "name": "set_1_language",
+        "type": "set-variables",
+        "transitions": [
+          {
+            "next": "pass_variables",
+            "event": "next"
+          }
+        ],
+        "properties": {
+          "variables": [
+            {
+              "value": "{{widgets.event.parsed.language}}",
+              "key": "language"
+            }
+          ],
+          "offset": {
+            "x": -130,
+            "y": 1020
+          }
+        }
+      },
+      {
+        "name": "pass_variables",
+        "type": "set-variables",
+        "transitions": [
+          {
+            "event": "next"
+          }
+        ],
+        "properties": {
+          "variables": [
+            {
+              "value": "{{widgets.event.parsed.event}}",
+              "key": "eid"
+            },
+            {
+              "value": "{{widgets.event.parsed[flow.variables.language]}}",
+              "key": "lang_id"
+            },
+            {
+              "value": "{{widgets.event.parsed.signup_link}}",
+              "key": "link"
+            }
+          ],
+          "offset": {
+            "x": -280,
+            "y": 1280
+          }
+        }
+      }
+    ],
+    "initial_state": "Trigger",
+    "flags": {
+      "allow_concurrent_calls": true
+    }
+  }
